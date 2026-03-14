@@ -3,6 +3,23 @@ import './App.css'
 import axios from 'axios'
 
 function App() {
+  let [question, setQuestion] = useState()
+
+  let [data, setData] = useState(null)
+
+  let handleSubmit = (e)=> {
+    e.preventDefault()
+
+    axios.post(`http://localhost:8000/ask`, {question})
+    .then((res)=> res.data)
+    .then((finalRes)=> {
+      console.log(finalRes);
+      if (finalRes._status){
+        setData(finalRes._finalData)
+      }
+    })
+    console.log(question)
+  }
 
   return (
     <>
