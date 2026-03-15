@@ -36,7 +36,7 @@ function App() {
   return (
     <div className="min-h-screen bg-[#fafafa] text-[#111]">
       <h1 className="text-center text-3xl font-semibold pt-10 pb-6">
-        Gemini AI
+        Pula AI Chatbot
       </h1>
 
       <div className="max-w-4xl mx-auto px-6">
