@@ -1,21 +1,26 @@
 import { useState } from 'react'
 import './App.css'
 import axios from 'axios'
+import ReactMarkdown from "react-markdown"
+import Loading from './Loading'
 
 function App() {
-  let [question, setQuestion] = useState()
+  let [question, setQuestion] = useState("")
 
-  let [data, setData] = useState(null)
+  let [data, setData] = useState("")
+  let [loadingStatus, setLoadingStatus] = useState(false)
 
   let handleSubmit = (e)=> {
     e.preventDefault()
+    setLoadingStatus(true)
 
     axios.post(`http://localhost:8000/ask`, {question})
     .then((res)=> res.data)
     .then((finalRes)=> {
       console.log(finalRes);
       if (finalRes._status){
-        setData(finalRes._finalData)
+        setData(finalRes.finalData)
+        setLoadingStatus(false)
       }
     })
     console.log(question)
@@ -32,7 +37,11 @@ function App() {
         </form>
 
         <div className="border-l-1 border-[#ccc]">
-          <div className="h-[300px] overflow-scroll p-3"></div>
+          <div className="h-[300px] text-left overflow-scroll p-3">
+
+            { loadingStatus ? <Loading/> : <ReactMarkdown>{data}</ReactMarkdown> }
+            
+          </div>
         </div>
       </div>
     </>
