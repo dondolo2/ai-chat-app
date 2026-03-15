@@ -14,7 +14,7 @@ let model = genAI.getGenerativeModel({model:"gemini-2.5-flash"})
 
 App.post("/ask",
     async (req, res) => {
-        let question = req.body.prompt
+        let question = req.body.question
         // console.log(req.body)
         let data = await model.generateContent(question)
         let finalData = data.response.text()
