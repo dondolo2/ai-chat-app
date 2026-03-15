@@ -2,25 +2,66 @@ import { useState } from "react";
 import "./App.css";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
-import Loading from "./Loading";
 
 function App() {
-  let [question, setQuestion] = useState("");
-  let [data, setData] = useState("");
-  let [loadingStatus, setLoadingStatus] = useState(false);
-  let [error, setError] = useState("");
+  const [question, setQuestion] = useState("");
+  const [messages, setMessages] = useState([]);
+  const [loadingStatus, setLoadingStatus] = useState(false);
+  const [error, setError] = useState("");
 
-  let handleSubmit = async (e) => {
+  const appendToAssistantMessage = (char) => {
+    setMessages((prev) => {
+      if (!prev.length) return prev;
+
+      const last = prev[prev.length - 1];
+      if (last.role !== "assistant") return prev;
+
+      const updated = [...prev];
+      updated[updated.length - 1] = {
+        ...last,
+        text: last.text + char,
+      };
+      return updated;
+    });
+  };
+
+  const streamText = (text) => {
+    if (!text || typeof text !== "string") {
+      setLoadingStatus(false);
+      return;
+    }
+
+    let i = 0;
+    const interval = setInterval(() => {
+      if (i >= text.length) {
+        clearInterval(interval);
+        setLoadingStatus(false);
+        return;
+      }
+
+      appendToAssistantMessage(text[i]);
+      i += 1;
+    }, 15);
+  };
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    
+
     if (!question.trim()) {
       setError("Please enter a question");
       return;
     }
-    
-    setLoadingStatus(true);
-    setData("");
+
     setError("");
+    setLoadingStatus(true);
+
+    // Persist the user question + placeholder assistant response in history
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", text: question },
+      { role: "assistant", text: "" },
+    ]);
+
 
     try {
       const res = await axios.post("http://localhost:8000/ask", { question });
@@ -33,35 +74,19 @@ function App() {
       }
     } catch (error) {
       console.error("Request failed:", error);
-      
+
       if (error.response) {
-        // The request was made and the server responded with a status code
-        // that falls out of the range of 2xx
         setError(error.response.data.message || `Server error: ${error.response.status}`);
       } else if (error.request) {
-        // The request was made but no response was received
         setError("No response from server. Please check if the server is running.");
       } else {
-        // Something happened in setting up the request that triggered an Error
         setError("Error setting up request: " + error.message);
       }
-      
+
       setLoadingStatus(false);
+    } finally {
+      setQuestion("");
     }
-  };
-
-  const streamText = (text) => {
-    let i = 0;
-
-    const interval = setInterval(() => {
-      setData((prev) => prev + text[i]);
-      i++;
-
-      if (i >= text.length) {
-        clearInterval(interval);
-        setLoadingStatus(false);
-      }
-    }, 15);
   };
 
   return (
@@ -96,13 +121,36 @@ function App() {
         )}
 
         <div className="mt-10 bg-white border border-gray-200 rounded-xl p-6 min-h-[250px]">
-          {loadingStatus ? (
-            <Loading />
-          ) : (
-            <div className="prose max-w-none">
-              <ReactMarkdown>{data}</ReactMarkdown>
-            </div>
-          )}
+          <div className="space-y-4">
+            {messages.length === 0 && !loadingStatus && (
+              <div className="text-gray-500">Ask something to start the conversation.</div>
+            )}
+
+            {messages.map((message, idx) => (
+              <div
+                key={idx}
+                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              >
+                <div
+                  className={`max-w-[80%] rounded-xl p-4 ${
+                    message.role === "user"
+                      ? "bg-black text-white"
+                      : "bg-gray-100 text-gray-900"
+                  }`}
+                >
+                  <ReactMarkdown>
+                    {message.text || (message.role === "assistant" && loadingStatus ? "..." : "")}
+                  </ReactMarkdown>
+                </div>
+              </div>
+            ))}
+
+            {loadingStatus && (
+              <div className="flex justify-start">
+                <div className="text-sm text-gray-500">Typing...</div>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>
