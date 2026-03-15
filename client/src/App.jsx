@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import "./App.css";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
@@ -8,19 +8,29 @@ function App() {
   const [messages, setMessages] = useState([]);
   const [loadingStatus, setLoadingStatus] = useState(false);
   const [error, setError] = useState("");
+  const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 200) + "px";
+  }, [question]);
 
   const appendToAssistantMessage = (char) => {
     setMessages((prev) => {
       if (!prev.length) return prev;
-
       const last = prev[prev.length - 1];
       if (last.role !== "assistant") return prev;
-
       const updated = [...prev];
-      updated[updated.length - 1] = {
-        ...last,
-        text: last.text + char,
-      };
+      updated[updated.length - 1] = { ...last, text: last.text + char };
       return updated;
     });
   };
@@ -30,7 +40,6 @@ function App() {
       setLoadingStatus(false);
       return;
     }
-
     let i = 0;
     const interval = setInterval(() => {
       if (i >= text.length) {
@@ -38,7 +47,6 @@ function App() {
         setLoadingStatus(false);
         return;
       }
-
       appendToAssistantMessage(text[i]);
       i += 1;
     }, 15);
@@ -46,26 +54,19 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     if (!question.trim()) {
       setError("Please enter a question");
       return;
     }
-
     setError("");
     setLoadingStatus(true);
-
-    // Persist the user question + placeholder assistant response in history
     setMessages((prev) => [
       ...prev,
       { role: "user", text: question },
       { role: "assistant", text: "" },
     ]);
-
-
     try {
       const res = await axios.post("http://localhost:8000/ask", { question });
-
       if (res.data._status) {
         streamText(res.data.finalData);
       } else {
@@ -74,7 +75,6 @@ function App() {
       }
     } catch (error) {
       console.error("Request failed:", error);
-
       if (error.response) {
         setError(error.response.data.message || `Server error: ${error.response.status}`);
       } else if (error.request) {
@@ -82,75 +82,135 @@ function App() {
       } else {
         setError("Error setting up request: " + error.message);
       }
-
       setLoadingStatus(false);
     } finally {
       setQuestion("");
     }
   };
 
+  const handleKeyDown = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[#fafafa] text-[#111]">
-      <h1 className="text-center text-3xl font-semibold pt-10 pb-6">
-        Pula AI Chatbot
-      </h1>
+    <div style={{ display: "flex", flexDirection: "column", height: "100vh", backgroundColor: "#f9f9f9", color: "#111" }}>
+      {/* Fixed Header */}
+      <div style={{ padding: "16px 0 12px", textAlign: "center", borderBottom: "1px solid #e5e5e5", backgroundColor: "#f9f9f9", flexShrink: 0 }}>
+        <h1 style={{ fontSize: "1.4rem", fontWeight: 600, margin: 0 }}>Pula AI Chatbot</h1>
+      </div>
 
-      <div className="max-w-4xl mx-auto px-6">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          <textarea
-            value={question}
-            onChange={(e) => setQuestion(e.target.value)}
-            placeholder="Ask something..."
-            className="w-full h-36 resize-none rounded-xl border border-gray-200 bg-white p-4 focus:outline-none focus:ring-1 focus:ring-gray-300"
-            disabled={loadingStatus}
-          />
+      {/* Scrollable messages area */}
+      <div style={{ flex: 1, overflowY: "auto", padding: "24px 0 8px" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto", padding: "0 16px" }}>
+          {messages.length === 0 && !loadingStatus && (
+            <div style={{ textAlign: "center", color: "#999", marginTop: "80px", fontSize: "1rem" }}>
+              Ask me anything to get started.
+            </div>
+          )}
 
-          <button 
-            type="submit"
-            disabled={loadingStatus}
-            className="bg-black text-white px-6 py-2 rounded-lg hover:opacity-90 transition disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {loadingStatus ? "Processing..." : "Ask"}
-          </button>
-        </form>
-
-        {error && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700">
-            {error}
-          </div>
-        )}
-
-        <div className="mt-10 bg-white border border-gray-200 rounded-xl p-6 min-h-[250px]">
-          <div className="space-y-4">
-            {messages.length === 0 && !loadingStatus && (
-              <div className="text-gray-500">Ask something to start the conversation.</div>
-            )}
-
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             {messages.map((message, idx) => (
               <div
                 key={idx}
-                className={`flex ${message.role === "user" ? "justify-end" : "justify-start"}`}
+                style={{
+                  display: "flex",
+                  justifyContent: message.role === "user" ? "flex-end" : "flex-start",
+                }}
               >
                 <div
-                  className={`max-w-[80%] rounded-xl p-4 ${
-                    message.role === "user"
-                      ? "bg-black text-white"
-                      : "bg-gray-100 text-gray-900"
-                  }`}
+                  style={{
+                    maxWidth: "80%",
+                    borderRadius: "18px",
+                    padding: "12px 16px",
+                    fontSize: "0.95rem",
+                    lineHeight: "1.6",
+                    backgroundColor: message.role === "user" ? "#111" : "#fff",
+                    color: message.role === "user" ? "#fff" : "#111",
+                    border: message.role === "assistant" ? "1px solid #e5e5e5" : "none",
+                    boxShadow: message.role === "assistant" ? "0 1px 4px rgba(0,0,0,0.06)" : "none",
+                  }}
                 >
                   <ReactMarkdown>
-                    {message.text || (message.role === "assistant" && loadingStatus ? "..." : "")}
+                    {message.text || (message.role === "assistant" && loadingStatus ? "▋" : "")}
                   </ReactMarkdown>
                 </div>
               </div>
             ))}
 
-            {loadingStatus && (
-              <div className="flex justify-start">
-                <div className="text-sm text-gray-500">Typing...</div>
+            {loadingStatus && messages[messages.length - 1]?.text === "" && (
+              <div style={{ display: "flex", justifyContent: "flex-start" }}>
+                <div style={{ padding: "12px 16px", borderRadius: "18px", backgroundColor: "#fff", border: "1px solid #e5e5e5", color: "#999", fontSize: "0.9rem" }}>
+                  Thinking...
+                </div>
               </div>
             )}
           </div>
+
+          {error && (
+            <div style={{ marginTop: "16px", padding: "12px 16px", backgroundColor: "#fff0f0", border: "1px solid #fcd0d0", borderRadius: "12px", color: "#c00", fontSize: "0.9rem" }}>
+              {error}
+            </div>
+          )}
+
+          <div ref={messagesEndRef} />
+        </div>
+      </div>
+
+      {/* Fixed bottom input area */}
+      <div style={{ flexShrink: 0, borderTop: "1px solid #e5e5e5", backgroundColor: "#f9f9f9", padding: "12px 16px 20px" }}>
+        <div style={{ maxWidth: "720px", margin: "0 auto" }}>
+          <form onSubmit={handleSubmit} style={{ display: "flex", alignItems: "flex-end", gap: "10px", backgroundColor: "#fff", border: "1px solid #d0d0d0", borderRadius: "16px", padding: "10px 12px", boxShadow: "0 2px 8px rgba(0,0,0,0.08)" }}>
+            <textarea
+              ref={textareaRef}
+              value={question}
+              onChange={(e) => setQuestion(e.target.value)}
+              onKeyDown={handleKeyDown}
+              placeholder="Message Pula AI... (Enter to send, Shift+Enter for new line)"
+              disabled={loadingStatus}
+              rows={1}
+              style={{
+                flex: 1,
+                resize: "none",
+                border: "none",
+                outline: "none",
+                backgroundColor: "transparent",
+                fontSize: "0.95rem",
+                lineHeight: "1.5",
+                maxHeight: "200px",
+                overflowY: "auto",
+                padding: "2px 0",
+                fontFamily: "inherit",
+                color: "#111",
+              }}
+            />
+            <button
+              type="submit"
+              disabled={loadingStatus || !question.trim()}
+              style={{
+                flexShrink: 0,
+                width: "36px",
+                height: "36px",
+                borderRadius: "10px",
+                border: "none",
+                backgroundColor: loadingStatus || !question.trim() ? "#ccc" : "#111",
+                color: "#fff",
+                cursor: loadingStatus || !question.trim() ? "not-allowed" : "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: "1rem",
+                transition: "background-color 0.2s",
+              }}
+            >
+              {loadingStatus ? "⏳" : "↑"}
+            </button>
+          </form>
+          <p style={{ textAlign: "center", fontSize: "0.75rem", color: "#aaa", marginTop: "8px" }}>
+            Pula AI can make mistakes. Verify important information.
+          </p>
         </div>
       </div>
     </div>
