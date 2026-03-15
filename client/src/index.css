@@ -1,1 +1,18 @@
 @import "tailwindcss";
+
+.prose {
+  line-height: 1.7;
+  font-size: 16px;
+}
+
+.prose h1,
+.prose h2,
+.prose h3 {
+  font-weight: 600;
+}
+
+.prose code {
+  background: #f4f4f4;
+  padding: 3px 6px;
+  border-radius: 6px;
+}
