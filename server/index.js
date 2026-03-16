@@ -1,78 +1,78 @@
-let express = require("express")
-let cors = require("cors")
+const express = require("express")
+const cors = require("cors")
 require("dotenv").config()
 
-const { HfInference } = require("@huggingface/inference")
+const { InferenceClient } = require("@huggingface/inference")
 
-let App = express()
-
-App.use(cors()) // Middleware
+const App = express()
+App.use(cors())
 App.use(express.json())
 
-const hf = new HfInference(process.env.HF_TOKEN)
+// InferenceClient is the current, non-deprecated API (replaces HfInference)
+const client = new InferenceClient(process.env.HF_TOKEN)
 
-App.post("/ask",
-    async (req, res) => {
-        try {
-            const question = req.body.question
-            
-            if (!question) {
-                return res.status(400).send({
-                    _status: false,
-                    message: "Question is required"
-                })
-            }
+App.post("/ask", async (req, res) => {
+    const { question } = req.body
 
-            console.log("Processing question:", question)
+    if (!question || !question.trim()) {
+        return res.status(400).json({
+            _status: false,
+            message: "Question is required"
+        })
+    }
 
-            // Determine which model to use (can be overridden via environment variable)
-            const modelName = process.env.MODEL_NAME || "gpt2";
+    console.log("📨 Question:", question)
 
-            // Add timeout to the request
-            const response = await Promise.race([
-                hf.textGeneration({
-                    model: modelName,
-                    inputs: question,
-                    parameters: {
-                        max_new_tokens: 200,
-                        temperature: 0.7
-                    }
-                }),
-                new Promise((_, reject) => 
-                    setTimeout(() => reject(new Error("Request timeout")), 30000)
-                )
-            ])
+    try {
+        const modelName = process.env.MODEL_NAME || "mistralai/Mistral-7B-Instruct-v0.3"
 
-            console.log(`Response received from model ${modelName}:`, response.generated_text.substring(0, 100) + "...")
+        const response = await client.chatCompletion({
+            model: modelName,
+            messages: [
+                {
+                    role: "user",
+                    content: question
+                }
+            ],
+            max_tokens: 500,
+            temperature: 0.7,
+        })
 
-            res.send({
-                _status: true,
-                finalData: response.generated_text
-            })
-            
-        } catch (error) {
-            console.error("Detailed error:", error)
+        const answer = response.choices[0].message.content
 
-            // Check for specific Hugging Face errors
-            if (error.message?.includes("403")) {
-                res.status(500).send({
-                    _status: false,
-                    message: "Model not accessible. Please check if the model exists and your token is valid."
-                })
-            } else if (error.message?.includes("timeout")) {
-                res.status(500).send({
-                    _status: false,
-                    message: "Request timed out. The model is taking too long to respond."
-                })
-            } else {
-                res.status(500).send({
-                    _status: false,
-                    message: "LLM request failed: " + error.message
-                })
-            }
+        console.log("✅ Response:", answer.substring(0, 100) + "...")
+
+        res.json({
+            _status: true,
+            finalData: answer
+        })
+
+    } catch (error) {
+        // Always log the full error so you can debug in the terminal
+        console.error("❌ Full error:", error?.message || error)
+
+        let userMessage = "Something went wrong."
+
+        if (error?.message?.includes("403") || error?.message?.includes("401")) {
+            userMessage = "Invalid or missing HuggingFace token. Check your HF_TOKEN in server/.env"
+        } else if (error?.message?.includes("429")) {
+            userMessage = "HuggingFace rate limit hit. Wait a moment and try again."
+        } else if (error?.message?.includes("503") || error?.message?.includes("loading")) {
+            userMessage = "Model is loading on HuggingFace servers. Try again in 20–30 seconds."
+        } else if (error?.message?.includes("timeout")) {
+            userMessage = "Request timed out. Try again."
+        } else {
+            userMessage = "API error: " + (error?.message || "Unknown error")
         }
+
+        res.status(500).json({
+            _status: false,
+            message: userMessage
+        })
+    }
 })
 
-App.listen(process.env.PORT, () => {
-    console.log('Server running on port', process.env.PORT)
+const PORT = process.env.PORT || 8000
+App.listen(PORT, () => {
+    console.log(`🚀 Server running on port ${PORT}`)
 })
