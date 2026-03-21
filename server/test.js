@@ -1,20 +1,42 @@
 require('dotenv').config()
-const { HfInference } = require("@huggingface/inference")
-
-const hf = new HfInference(process.env.HF_TOKEN)
 
 async function test() {
     try {
-        const response = await hf.textGeneration({
-            model: "gpt2", // Test with a known working model
-            inputs: "Hello, how are you?",
-            parameters: {
-                max_new_tokens: 50
+        console.log("Testing with model: HuggingFaceH4/zephyr-7b-beta")
+        
+        // Use the new router endpoint
+        const response = await fetch(
+            "https://router.huggingface.co/hf-inference/models/HuggingFaceH4/zephyr-7b-beta/v1/chat/completions",
+            {
+                headers: {
+                    Authorization: `Bearer ${process.env.HF_TOKEN}`,
+                    "Content-Type": "application/json",
+                },
+                method: "POST",
+                body: JSON.stringify({
+                    model: "HuggingFaceH4/zephyr-7b-beta",
+                    messages: [
+                        {
+                            role: "user",
+                            content: "Hello, how are you? Please respond in one short sentence."
+                        }
+                    ],
+                    max_tokens: 100,
+                    temperature: 0.7,
+                }),
             }
-        })
-        console.log("Success:", response.generated_text)
+        )
+
+        if (!response.ok) {
+            const error = await response.text()
+            throw new Error(`HTTP ${response.status}: ${error}`)
+        }
+
+        const data = await response.json()
+        console.log("✅ Success:", data.choices[0].message.content)
+        
     } catch (error) {
-        console.error("Failed:", error)
+        console.error("❌ Failed:", error.message)
     }
 }
 
