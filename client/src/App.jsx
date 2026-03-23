@@ -98,8 +98,8 @@ function App() {
     <div className="app-shell">
 
       <header className="app-header">
-        <span className="app-logo">✦</span>
-        <h1 className="app-title">Pula AI</h1>
+        <span className="app-logo">🪘</span>
+        <h1 className="app-title">Fast-nyana AI</h1>
       </header>
 
       <main className="app-feed">
@@ -107,7 +107,7 @@ function App() {
 
           {messages.length === 0 && (
             <div className="empty-state">
-              <span className="empty-icon">✦</span>
+              <span className="empty-icon">🪘</span>
               <p className="empty-heading">How can I help you today?</p>
               <p className="empty-sub">Type a message below to get started.</p>
             </div>
@@ -116,7 +116,7 @@ function App() {
           {messages.map((msg, idx) => (
             <div key={idx} className={"bubble-row " + msg.role}>
               {msg.role === "assistant" && (
-                <div className="avatar">✦</div>
+                <div className="avatar">🪘</div>
               )}
               <div className={"bubble " + msg.role}>
                 <ReactMarkdown>

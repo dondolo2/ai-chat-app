@@ -24,28 +24,27 @@ App.post("/ask", async (req, res) => {
     console.log("📨 Question:", question)
 
     try {
-        const modelName = process.env.MODEL_NAME || "mistralai/Mistral-7B-Instruct-v0.3"
+        const modelName = process.env.MODEL_NAME || "meta-llama/Llama-3.1-8B-Instruct";
 
+        // Use chatCompletion for Llama to get the best results
         const response = await client.chatCompletion({
             model: modelName,
             messages: [
-                {
-                    role: "user",
-                    content: question
-                }
+                { role: "system", content: "You are a helpful chat assistant." },
+                { role: "user", content: question }
             ],
             max_tokens: 500,
             temperature: 0.7,
-        })
+        });
 
-        const answer = response.choices[0].message.content
+    const answer = response.choices[0].message.content;
 
-        console.log("✅ Response:", answer.substring(0, 100) + "...")
+    console.log("✅ Response:", answer.substring(0, 100) + "...");
 
-        res.json({
-            _status: true,
-            finalData: answer
-        })
+    res.json({
+        _status: true,
+        finalData: answer
+    });
 
     } catch (error) {
         // Always log the full error so you can debug in the terminal
