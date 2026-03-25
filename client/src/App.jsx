@@ -221,14 +221,94 @@ function App() {
     if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
   };
 
+  // ── grouped sidebar chats ─────────────────────────────────────────────────
+  const grouped = groupChats(chats);
 
+  // ── render ────────────────────────────────────────────────────────────────
   return (
-    <div className="app-shell">
+    <div className={"app-shell" + (sidebarOpen ? " sidebar-open" : "")}>
 
-      <header className="app-header">
-        <span className="app-logo">🪘</span>
-        <h1 className="app-title">Fast-nyana AI</h1>
-      </header>
+      {/* ── Sidebar ── */}
+      <aside className={"sidebar" + (sidebarOpen ? " open" : "")}>
+        <div className="sidebar-header">
+          <button className="icon-btn" onClick={startNewChat} title="New chat">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+          <span className="sidebar-brand">Fast-nyana AI</span>
+          <button className="icon-btn" onClick={() => setSidebarOpen(false)} title="Close sidebar">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+            </svg>
+          </button>
+        </div>
+
+        <nav className="sidebar-nav">
+          {chats.length === 0 && (
+            <p className="sidebar-empty">No chats yet</p>
+          )}
+          {Object.entries(grouped).map(([label, group]) => (
+            <div key={label} className="sidebar-group">
+              <p className="sidebar-group-label">{label}</p>
+              {group.map((chat) => (
+                <div
+                  key={chat.id}
+                  className={"sidebar-item" + (chat.id === activeChatId ? " active" : "")}
+                  onClick={() => { setActiveChatId(chat.id); setError(""); }}
+                >
+                  {editingId === chat.id ? (
+                    <input
+                      ref={titleInputRef}
+                      className="sidebar-rename-input"
+                      value={editingTitle}
+                      onChange={(e) => setEditingTitle(e.target.value)}
+                      onBlur={() => commitRename(chat.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") commitRename(chat.id);
+                        if (e.key === "Escape") setEditingId(null);
+                        e.stopPropagation();
+                      }}
+                      onClick={(e) => e.stopPropagation()}
+                    />
+                  ) : (
+                    <>
+                      <span className="sidebar-item-title">{chat.title}</span>
+                      <span className="sidebar-item-date">
+                        {new Date(chat.updatedAt).toLocaleDateString("en-ZA", {
+                          day: "2-digit", month: "short"
+                        })}
+                      </span>
+                      <div className="sidebar-item-actions">
+                        <button
+                          className="icon-btn sm"
+                          title="Rename"
+                          onClick={(e) => beginRename(chat, e)}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                            <path d="M11.5 2.5a2.121 2.121 0 013 3L5 15H2v-3L11.5 2.5z"
+                              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                        <button
+                          className="icon-btn sm danger"
+                          title="Delete"
+                          onClick={(e) => deleteChat(chat.id, e)}
+                        >
+                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+                            <path d="M3 4h10M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"
+                              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
+        </nav>
+      </aside>
 
       <main className="app-feed">
         <div className="feed-inner">
