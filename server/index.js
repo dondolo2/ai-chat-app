@@ -18,19 +18,36 @@ App.get("/health", (req, res) => {
 })
 
 // InferenceClient is the current, non-deprecated API (replaces HfInference)
-const client = new InferenceClient(process.env.HF_TOKEN)
+app.post("/ask", async (req, res) => {
+  const { question, history = [] } = req.body
 
-App.post("/ask", async (req, res) => {
-    const { question } = req.body
+  if (!question?.trim()) {
+    return res.status(400).json({ _status: false, message: "Question is required" })
+  }
 
-    if (!question || !question.trim()) {
-        return res.status(400).json({
-            _status: false,
-            message: "Question is required"
-        })
-    }
+  const token = process.env.HF_TOKEN
+  if (!token) {
+    return res.status(500).json({ _status: false, message: "HF_TOKEN missing from .env" })
+  }
 
-    console.log("📨 Question:", question)
+  const client    = new InferenceClient(token)
+  const modelName = process.env.MODEL_NAME || "meta-llama/Meta-Llama-3-8B-Instruct"
+
+  // Build full message array:
+  //   [system]  →  [all prior turns from this chat]  →  [new user message]
+  const messages = [
+    {
+      role:    "system",
+      content: "You are Fast-nyana AI, a helpful, concise and friendly assistant. " +
+               "You remember everything said earlier in this conversation and use that context when answering.",
+    },
+    ...history,                              // full chat history sent every request
+    { role: "user", content: question },
+  ]
+
+  console.log(`\n📨  ${question}`)
+  console.log(`📜  history turns: ${history.length}`)
+
 
     try {
         const modelName = process.env.MODEL_NAME || "meta-llama/Llama-3.1-8B-Instruct";
