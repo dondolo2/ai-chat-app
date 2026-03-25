@@ -67,6 +67,23 @@ function App() {
   const activeChat = chats.find((c) => c.id === activeChatId) || null;
   const messages   = activeChat?.messages || [];
 
+  // ── persistence: save whenever chats changes ──────────────────────────────
+  useEffect(() => { saveChats(chats); }, [chats]);
+
+// ── auto-scroll ───────────────────────────────────────────────────────────
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // ── auto-resize textarea ──────────────────────────────────────────────────
+  useEffect(() => {
+    const ta = textareaRef.current;
+    if (!ta) return;
+    ta.style.height = "auto";
+    ta.style.height = Math.min(ta.scrollHeight, 180) + "px";
+  }, [question]);
+
+
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
