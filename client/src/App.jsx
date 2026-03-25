@@ -144,20 +144,25 @@ function App() {
     }, 15);
   }, [appendToLastAssistant]);
 
+  // ── submit ────────────────────────────────────────────────────────────────
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!question.trim()) return;
+    if (!question.trim() || loadingStatus) return;
 
     const userQuestion = question.trim();
     setError("");
     setLoadingStatus(true);
     setQuestion("");
 
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", text: userQuestion },
-      { role: "assistant", text: "" },
-    ]);
+    // ensure there's an active chat; create one if needed
+    let chatId = activeChatId;
+    if (!chatId || !chats.find((c) => c.id === chatId)) {
+      const c = newChat();
+      setChats((prev) => [c, ...prev]);
+      setActiveChatId(c.id);
+      chatId = c.id;
+    }
 
     try {
       const res = await axios.post("http://localhost:8000/ask", { question: userQuestion });
