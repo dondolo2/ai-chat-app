@@ -63,6 +63,9 @@ function App() {
     const textareaRef    = useRef(null);
     const titleInputRef  = useRef(null);
   
+      // derive active chat object
+  const activeChat = chats.find((c) => c.id === activeChatId) || null;
+  const messages   = activeChat?.messages || [];
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
