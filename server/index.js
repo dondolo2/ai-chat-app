@@ -50,51 +50,33 @@ app.post("/ask", async (req, res) => {
 
 
     try {
-        const modelName = process.env.MODEL_NAME || "meta-llama/Llama-3.1-8B-Instruct";
+    const response = await client.chatCompletion({
+      model:      modelName,
+      messages,
+      max_tokens: 2048,
+      temperature: 0.7,
+    })
 
-        // Use chatCompletion for Llama to get the best results
-        const response = await client.chatCompletion({
-            model: modelName,
-            messages: [
-                { role: "system", content: "You are a helpful chat assistant." },
-                { role: "user", content: question }
-            ],
-            max_tokens: 500,
-            temperature: 0.7,
-        });
+    const answer = response.choices[0].message.content
+    console.log("✅  answer:", answer.substring(0, 80) + "...")
+    res.json({ _status: true, finalData: answer })
 
-    const answer = response.choices[0].message.content;
+  } catch (error) {
+    const msg    = error?.message || ""
+    const status = error?.response?.status || error?.statusCode
 
-    console.log("✅ Response:", answer.substring(0, 100) + "...");
+    console.error("❌  error:", msg, "| status:", status || "n/a")
 
-    res.json({
-        _status: true,
-        finalData: answer
-    });
+    let userMessage
+    if      (status === 401 || msg.includes("401"))                            userMessage = "Token rejected (401) — check HF_TOKEN in server/.env"
+    else if (status === 403 || msg.includes("403"))                            userMessage = "Access denied (403) — enable 'Make calls to Inference API' on your HF token"
+    else if (status === 429 || msg.includes("429"))                            userMessage = "Rate limited — wait 60 s and try again"
+    else if (status === 503 || msg.includes("503") || msg.includes("loading")) userMessage = "Model warming up — wait 20–30 s and try again"
+    else if (msg.includes("provider") || msg.includes("inference"))            userMessage = "Inference API blocked — enable serverless inference on your HF token"
+    else                                                                       userMessage = "Error: " + (msg || "check server terminal")
 
-    } catch (error) {
-        // Always log the full error so you can debug in the terminal
-        console.error("❌ Full error:", error?.message || error)
-
-        let userMessage = "Something went wrong."
-
-        if (error?.message?.includes("403") || error?.message?.includes("401")) {
-            userMessage = "Invalid or missing HuggingFace token. Check your HF_TOKEN in server/.env"
-        } else if (error?.message?.includes("429")) {
-            userMessage = "HuggingFace rate limit hit. Wait a moment and try again."
-        } else if (error?.message?.includes("503") || error?.message?.includes("loading")) {
-            userMessage = "Model is loading on HuggingFace servers. Try again in 20–30 seconds."
-        } else if (error?.message?.includes("timeout")) {
-            userMessage = "Request timed out. Try again."
-        } else {
-            userMessage = "API error: " + (error?.message || "Unknown error")
-        }
-
-        res.status(500).json({
-            _status: false,
-            message: userMessage
-        })
-    }
+    res.status(500).json({ _status: false, message: userMessage })
+  }
 })
 
 const PORT = process.env.PORT || 8000
