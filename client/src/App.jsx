@@ -29,6 +29,16 @@ const groupChats = (chats) => {
   return groups;
 };
 
+const LS_KEY = "fastnyana_chats";
+
+const loadChats = () => {
+  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
+  catch { return []; }
+};
+
+const saveChats = (chats) =>
+  localStorage.setItem(LS_KEY, JSON.stringify(chats));
+
 function App() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
