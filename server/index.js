@@ -8,6 +8,15 @@ const App = express()
 App.use(cors())
 App.use(express.json())
 
+App.get("/health", (req, res) => {
+  const token = process.env.HF_TOKEN
+  res.json({
+    status:       "running",
+    token_loaded: !!token,
+    model:        process.env.MODEL_NAME || "meta-llama/Meta-Llama-3-8B-Instruct",
+  })
+})
+
 // InferenceClient is the current, non-deprecated API (replaces HfInference)
 const client = new InferenceClient(process.env.HF_TOKEN)
 
