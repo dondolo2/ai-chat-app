@@ -120,33 +120,29 @@ function App() {
     setEditingId(null);
   };
 
-  const appendToAssistantMessage = (char) => {
-    setMessages((prev) => {
-      if (!prev.length) return prev;
-      const last = prev[prev.length - 1];
-      if (last.role !== "assistant") return prev;
-      const updated = [...prev];
-      updated[updated.length - 1] = { ...last, text: last.text + char };
-      return updated;
-    });
-  };
+  // ── message streaming ─────────────────────────────────────────────────────
 
-  const streamText = (text) => {
-    if (!text || typeof text !== "string") {
-      setLoadingStatus(false);
-      return;
-    }
+  const appendToLastAssistant = useCallback((char) => {
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id !== activeChatId) return chat;
+        const msgs = [...chat.messages];
+        const last = msgs[msgs.length - 1];
+        if (!last || last.role !== "assistant") return chat;
+        msgs[msgs.length - 1] = { ...last, text: last.text + char };
+        return { ...chat, messages: msgs, updatedAt: Date.now() };
+      })
+    );
+  }, [activeChatId]);
+
+  const streamText = useCallback((text) => {
+    if (!text || typeof text !== "string") { setLoadingStatus(false); return; }
     let i = 0;
-    const interval = setInterval(() => {
-      if (i >= text.length) {
-        clearInterval(interval);
-        setLoadingStatus(false);
-        return;
-      }
-      appendToAssistantMessage(text[i]);
-      i += 1;
+    const iv = setInterval(() => {
+      if (i >= text.length) { clearInterval(iv); setLoadingStatus(false); return; }
+      appendToLastAssistant(text[i++]);
     }, 15);
-  };
+  }, [appendToLastAssistant]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
