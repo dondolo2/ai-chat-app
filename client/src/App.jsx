@@ -89,10 +89,36 @@ function App() {
     }, [editingId]);
   
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // ── chat mutations ────────────────────────────────────────────────────────
 
+  const startNewChat = () => {
+    const c = newChat();
+    setChats((prev) => [c, ...prev]);
+    setActiveChatId(c.id);
+    setError("");
+  };
+
+  const deleteChat = (id, e) => {
+    e.stopPropagation();
+    setChats((prev) => prev.filter((c) => c.id !== id));
+    if (activeChatId === id) setActiveChatId(null);
+  };
+
+  const beginRename = (chat, e) => {
+    e.stopPropagation();
+    setEditingId(chat.id);
+    setEditingTitle(chat.title);
+  };
+
+  const commitRename = (id) => {
+    const t = editingTitle.trim();
+    if (t) {
+      setChats((prev) =>
+        prev.map((c) => (c.id === id ? { ...c, title: t } : c))
+      );
+    }
+    setEditingId(null);
+  };
 
   const appendToAssistantMessage = (char) => {
     setMessages((prev) => {
