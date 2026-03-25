@@ -19,6 +19,16 @@ const todayLabel = (date) => {
   return d.toLocaleString("default", { month: "long", year: "numeric" });
 };
 
+const groupChats = (chats) => {
+  const groups = {};
+  [...chats].sort((a, b) => b.updatedAt - a.updatedAt).forEach((c) => {
+    const label = todayLabel(c.updatedAt);
+    if (!groups[label]) groups[label] = [];
+    groups[label].push(c);
+  });
+  return groups;
+};
+
 function App() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
