@@ -47,13 +47,22 @@ const newChat = () => ({
   updatedAt: Date.now(),
 });
 
+// ─── component ──────────────────────────────────────────────────────────────
+
 function App() {
-  const [question, setQuestion] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [loadingStatus, setLoadingStatus] = useState(false);
-  const [error, setError] = useState("");
-  const messagesEndRef = useRef(null);
-  const textareaRef = useRef(null);
+  const [chats,         setChats]         = useState(loadChats);
+    const [activeChatId,  setActiveChatId]  = useState(null);
+    const [question,      setQuestion]      = useState("");
+    const [loadingStatus, setLoadingStatus] = useState(false);
+    const [error,         setError]         = useState("");
+    const [sidebarOpen,   setSidebarOpen]   = useState(true);
+    const [editingId,     setEditingId]     = useState(null);   // chat being renamed
+    const [editingTitle,  setEditingTitle]  = useState("");
+  
+    const messagesEndRef = useRef(null);
+    const textareaRef    = useRef(null);
+    const titleInputRef  = useRef(null);
+  
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
