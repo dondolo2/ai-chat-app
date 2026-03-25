@@ -50,27 +50,29 @@ const newChat = () => ({
 // ─── component ──────────────────────────────────────────────────────────────
 
 function App() {
-  const [chats,         setChats]         = useState(loadChats);
-    const [activeChatId,  setActiveChatId]  = useState(null);
-    const [question,      setQuestion]      = useState("");
-    const [loadingStatus, setLoadingStatus] = useState(false);
-    const [error,         setError]         = useState("");
-    const [sidebarOpen,   setSidebarOpen]   = useState(true);
-    const [editingId,     setEditingId]     = useState(null);   // chat being renamed
-    const [editingTitle,  setEditingTitle]  = useState("");
-  
-    const messagesEndRef = useRef(null);
-    const textareaRef    = useRef(null);
-    const titleInputRef  = useRef(null);
-  
-      // derive active chat object
+  const [chats, setChats] = useState(loadChats);
+  const [activeChatId, setActiveChatId] = useState(null);
+  const [question, setQuestion] = useState("");
+  const [loadingStatus, setLoadingStatus] = useState(false);
+  const [error, setError] = useState("");
+  const [sidebarOpen, setSidebarOpen] = useState(true);
+  const [editingId, setEditingId] = useState(null); // chat being renamed
+  const [editingTitle, setEditingTitle] = useState("");
+
+  const messagesEndRef = useRef(null);
+  const textareaRef = useRef(null);
+  const titleInputRef = useRef(null);
+
+  // derive active chat object
   const activeChat = chats.find((c) => c.id === activeChatId) || null;
-  const messages   = activeChat?.messages || [];
+  const messages = activeChat?.messages || [];
 
   // ── persistence: save whenever chats changes ──────────────────────────────
-  useEffect(() => { saveChats(chats); }, [chats]);
+  useEffect(() => {
+    saveChats(chats);
+  }, [chats]);
 
-// ── auto-scroll ───────────────────────────────────────────────────────────
+  // ── auto-scroll ───────────────────────────────────────────────────────────
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages]);
@@ -84,10 +86,9 @@ function App() {
   }, [question]);
 
   // ── focus title input when editing ───────────────────────────────────────
-    useEffect(() => {
-      if (editingId) titleInputRef.current?.focus();
-    }, [editingId]);
-  
+  useEffect(() => {
+    if (editingId) titleInputRef.current?.focus();
+  }, [editingId]);
 
   // ── chat mutations ────────────────────────────────────────────────────────
 
@@ -114,7 +115,7 @@ function App() {
     const t = editingTitle.trim();
     if (t) {
       setChats((prev) =>
-        prev.map((c) => (c.id === id ? { ...c, title: t } : c))
+        prev.map((c) => (c.id === id ? { ...c, title: t } : c)),
       );
     }
     setEditingId(null);
@@ -122,27 +123,40 @@ function App() {
 
   // ── message streaming ─────────────────────────────────────────────────────
 
-  const appendToLastAssistant = useCallback((char) => {
-    setChats((prev) =>
-      prev.map((chat) => {
-        if (chat.id !== activeChatId) return chat;
-        const msgs = [...chat.messages];
-        const last = msgs[msgs.length - 1];
-        if (!last || last.role !== "assistant") return chat;
-        msgs[msgs.length - 1] = { ...last, text: last.text + char };
-        return { ...chat, messages: msgs, updatedAt: Date.now() };
-      })
-    );
-  }, [activeChatId]);
+  const appendToLastAssistant = useCallback(
+    (char) => {
+      setChats((prev) =>
+        prev.map((chat) => {
+          if (chat.id !== activeChatId) return chat;
+          const msgs = [...chat.messages];
+          const last = msgs[msgs.length - 1];
+          if (!last || last.role !== "assistant") return chat;
+          msgs[msgs.length - 1] = { ...last, text: last.text + char };
+          return { ...chat, messages: msgs, updatedAt: Date.now() };
+        }),
+      );
+    },
+    [activeChatId],
+  );
 
-  const streamText = useCallback((text) => {
-    if (!text || typeof text !== "string") { setLoadingStatus(false); return; }
-    let i = 0;
-    const iv = setInterval(() => {
-      if (i >= text.length) { clearInterval(iv); setLoadingStatus(false); return; }
-      appendToLastAssistant(text[i++]);
-    }, 15);
-  }, [appendToLastAssistant]);
+  const streamText = useCallback(
+    (text) => {
+      if (!text || typeof text !== "string") {
+        setLoadingStatus(false);
+        return;
+      }
+      let i = 0;
+      const iv = setInterval(() => {
+        if (i >= text.length) {
+          clearInterval(iv);
+          setLoadingStatus(false);
+          return;
+        }
+        appendToLastAssistant(text[i++]);
+      }, 15);
+    },
+    [appendToLastAssistant],
+  );
 
   // ── submit ────────────────────────────────────────────────────────────────
 
@@ -179,18 +193,18 @@ function App() {
         if (chat.id !== chatId) return chat;
         const updated = [
           ...chat.messages,
-          { role: "user",      text: userQuestion },
+          { role: "user", text: userQuestion },
           { role: "assistant", text: "" },
         ];
         return {
           ...chat,
-          messages:  updated,
-          title:     isFirstMessage
-                       ? userQuestion.slice(0, 42) + (userQuestion.length > 42 ? "…" : "")
-                       : chat.title,
+          messages: updated,
+          title: isFirstMessage
+            ? userQuestion.slice(0, 42) + (userQuestion.length > 42 ? "…" : "")
+            : chat.title,
           updatedAt: Date.now(),
         };
-      })
+      }),
     );
 
     try {
@@ -207,9 +221,13 @@ function App() {
       }
     } catch (err) {
       if (err.response) {
-        setError(err.response.data.message || `Server error: ${err.response.status}`);
+        setError(
+          err.response.data.message || `Server error: ${err.response.status}`,
+        );
       } else if (err.request) {
-        setError("Cannot reach server. Make sure the server is running on port 8000.");
+        setError(
+          "Cannot reach server. Make sure the server is running on port 8000.",
+        );
       } else {
         setError("Request error: " + err.message);
       }
@@ -218,7 +236,10 @@ function App() {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSubmit(e);
+    }
   };
 
   // ── grouped sidebar chats ─────────────────────────────────────────────────
@@ -227,35 +248,51 @@ function App() {
   // ── render ────────────────────────────────────────────────────────────────
   return (
     <div className={"app-shell" + (sidebarOpen ? " sidebar-open" : "")}>
-
       {/* ── Sidebar ── */}
       <aside className={"sidebar" + (sidebarOpen ? " open" : "")}>
         <div className="sidebar-header">
           <button className="icon-btn" onClick={startNewChat} title="New chat">
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M8 3v10M3 8h10" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              <path
+                d="M8 3v10M3 8h10"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
           <span className="sidebar-brand">Fast-nyana AI</span>
-          <button className="icon-btn" onClick={() => setSidebarOpen(false)} title="Close sidebar">
+          <button
+            className="icon-btn"
+            onClick={() => setSidebarOpen(false)}
+            title="Close sidebar"
+          >
             <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-              <path d="M3 3l10 10M13 3L3 13" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
+              <path
+                d="M3 3l10 10M13 3L3 13"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
 
         <nav className="sidebar-nav">
-          {chats.length === 0 && (
-            <p className="sidebar-empty">No chats yet</p>
-          )}
+          {chats.length === 0 && <p className="sidebar-empty">No chats yet</p>}
           {Object.entries(grouped).map(([label, group]) => (
             <div key={label} className="sidebar-group">
               <p className="sidebar-group-label">{label}</p>
               {group.map((chat) => (
                 <div
                   key={chat.id}
-                  className={"sidebar-item" + (chat.id === activeChatId ? " active" : "")}
-                  onClick={() => { setActiveChatId(chat.id); setError(""); }}
+                  className={
+                    "sidebar-item" + (chat.id === activeChatId ? " active" : "")
+                  }
+                  onClick={() => {
+                    setActiveChatId(chat.id);
+                    setError("");
+                  }}
                 >
                   {editingId === chat.id ? (
                     <input
@@ -276,7 +313,8 @@ function App() {
                       <span className="sidebar-item-title">{chat.title}</span>
                       <span className="sidebar-item-date">
                         {new Date(chat.updatedAt).toLocaleDateString("en-ZA", {
-                          day: "2-digit", month: "short"
+                          day: "2-digit",
+                          month: "short",
                         })}
                       </span>
                       <div className="sidebar-item-actions">
@@ -285,9 +323,19 @@ function App() {
                           title="Rename"
                           onClick={(e) => beginRename(chat, e)}
                         >
-                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                            <path d="M11.5 2.5a2.121 2.121 0 013 3L5 15H2v-3L11.5 2.5z"
-                              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M11.5 2.5a2.121 2.121 0 013 3L5 15H2v-3L11.5 2.5z"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
                           </svg>
                         </button>
                         <button
@@ -295,9 +343,19 @@ function App() {
                           title="Delete"
                           onClick={(e) => deleteChat(chat.id, e)}
                         >
-                          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-                            <path d="M3 4h10M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"
-                              stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round"/>
+                          <svg
+                            width="12"
+                            height="12"
+                            viewBox="0 0 16 16"
+                            fill="none"
+                          >
+                            <path
+                              d="M3 4h10M6 4V2h4v2M5 4v9a1 1 0 001 1h4a1 1 0 001-1V4"
+                              stroke="currentColor"
+                              strokeWidth="1.6"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
                           </svg>
                         </button>
                       </div>
@@ -310,75 +368,120 @@ function App() {
         </nav>
       </aside>
 
-      <main className="app-feed">
-        <div className="feed-inner">
-
-          {messages.length === 0 && (
-            <div className="empty-state">
-              <span className="empty-icon">🪘</span>
-              <p className="empty-heading">How can I help you today?</p>
-              <p className="empty-sub">Type a message below to get started.</p>
-            </div>
-          )}
-
-          {messages.map((msg, idx) => (
-            <div key={idx} className={"bubble-row " + msg.role}>
-              {msg.role === "assistant" && (
-                <div className="avatar">🪘</div>
-              )}
-              <div className={"bubble " + msg.role}>
-                <ReactMarkdown>
-                  {msg.text || (msg.role === "assistant" && loadingStatus ? "\u200b" : "")}
-                </ReactMarkdown>
-                {msg.role === "assistant" && !msg.text && loadingStatus && (
-                  <span className="typing-dot" />
-                )}
-              </div>
-            </div>
-          ))}
-
-          {error && (
-            <div className="error-banner">
-              <span>⚠</span> {error}
-            </div>
-          )}
-
-          <div ref={messagesEndRef} />
-        </div>
-      </main>
-
-      <footer className="app-footer">
-        <form className="input-form" onSubmit={handleSubmit}>
-          <div className="input-box">
-            <textarea
-              ref={textareaRef}
-              value={question}
-              onChange={(e) => setQuestion(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder="Message Fast-nyana AI…"
-              disabled={loadingStatus}
-              rows={1}
-              className="input-textarea"
-            />
+      {/* ── Main area ── */}
+      <div className="main-area">
+        {/* ── Top bar ── */}
+        <header className="app-header">
+          {!sidebarOpen && (
             <button
-              type="submit"
-              disabled={loadingStatus || !question.trim()}
-              className="send-btn"
-              aria-label="Send"
+              className="icon-btn"
+              onClick={() => setSidebarOpen(true)}
+              title="Open sidebar"
             >
-              {loadingStatus ? <Loading /> : (
-                <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M8 13V3M8 3L3 8M8 3l5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              )}
+              <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path
+                  d="M2 4h12M2 8h12M2 12h12"
+                  stroke="currentColor"
+                  strokeWidth="1.8"
+                  strokeLinecap="round"
+                />
+              </svg>
             </button>
-          </div>
-          <p className="input-hint">Enter to send · Shift+Enter for new line</p>
-        </form>
-      </footer>
+          )}
+          <span className="app-logo">🪘</span>
+          <h1 className="app-title">
+            {activeChat ? activeChat.title : "Fast-nyana AI"}
+          </h1>
+          {!activeChatId && (
+            <button className="new-chat-btn" onClick={startNewChat}>
+              + New chat
+            </button>
+          )}
+        </header>
 
+        {/* ── Feed ── */}
+        <main className="app-feed">
+          <div className="feed-inner">
+            {messages.length === 0 && (
+              <div className="empty-state">
+                <span className="empty-icon">🪘</span>
+                <p className="empty-heading">How can I help you today?</p>
+                <p className="empty-sub">
+                  Type a message below to get started.
+                </p>
+              </div>
+            )}
+
+            {messages.map((msg, idx) => (
+              <div key={idx} className={"bubble-row " + msg.role}>
+                {msg.role === "assistant" && <div className="avatar">🪘</div>}
+                <div className={"bubble " + msg.role}>
+                  <ReactMarkdown>
+                    {msg.text ||
+                      (msg.role === "assistant" && loadingStatus
+                        ? "\u200b"
+                        : "")}
+                  </ReactMarkdown>
+                  {msg.role === "assistant" && !msg.text && loadingStatus && (
+                    <span className="typing-dot" />
+                  )}
+                </div>
+              </div>
+            ))}
+
+            {error && (
+              <div className="error-banner">
+                <span>⚠</span> {error}
+              </div>
+            )}
+
+            <div ref={messagesEndRef} />
+          </div>
+        </main>
+
+        {/* ── Input ── */}
+        <footer className="app-footer">
+          <form className="input-form" onSubmit={handleSubmit}>
+            <div className="input-box">
+              <textarea
+                ref={textareaRef}
+                value={question}
+                onChange={(e) => setQuestion(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Message Fast-nyana AI…"
+                disabled={loadingStatus}
+                rows={1}
+                className="input-textarea"
+              />
+              <button
+                type="submit"
+                disabled={loadingStatus || !question.trim()}
+                className="send-btn"
+                aria-label="Send"
+              >
+                {loadingStatus ? (
+                  <Loading />
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                    <path
+                      d="M8 13V3M8 3L3 8M8 3l5 5"
+                      stroke="currentColor"
+                      strokeWidth="1.8"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
+                  </svg>
+                )}
+              </button>
+            </div>
+            <p className="input-hint">
+              Enter to send · Shift+Enter for new line
+            </p>
+          </form>
+        </footer>
+      </div>
     </div>
   );
 }
-
+      
 export default App;
