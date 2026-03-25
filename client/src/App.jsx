@@ -83,6 +83,11 @@ function App() {
     ta.style.height = Math.min(ta.scrollHeight, 180) + "px";
   }, [question]);
 
+  // ── focus title input when editing ───────────────────────────────────────
+    useEffect(() => {
+      if (editingId) titleInputRef.current?.focus();
+    }, [editingId]);
+  
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
