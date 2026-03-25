@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import "./App.css";
 import axios from "axios";
 import ReactMarkdown from "react-markdown";
@@ -9,7 +9,7 @@ import Loading from "./Loading";
 const genId = () => crypto.randomUUID();
 
 const todayLabel = (date) => {
-  const d   = new Date(date);
+  const d = new Date(date);
   const now = new Date();
   const diff = (now - d) / 86400000;
   if (diff < 1 && now.getDate() === d.getDate()) return "Today";
@@ -21,28 +21,33 @@ const todayLabel = (date) => {
 
 const groupChats = (chats) => {
   const groups = {};
-  [...chats].sort((a, b) => b.updatedAt - a.updatedAt).forEach((c) => {
-    const label = todayLabel(c.updatedAt);
-    if (!groups[label]) groups[label] = [];
-    groups[label].push(c);
-  });
+  [...chats]
+    .sort((a, b) => b.updatedAt - a.updatedAt)
+    .forEach((c) => {
+      const label = todayLabel(c.updatedAt);
+      if (!groups[label]) groups[label] = [];
+      groups[label].push(c);
+    });
   return groups;
 };
 
 const LS_KEY = "fastnyana_chats";
 
 const loadChats = () => {
-  try { return JSON.parse(localStorage.getItem(LS_KEY)) || []; }
-  catch { return []; }
+  try {
+    return JSON.parse(localStorage.getItem(LS_KEY)) || [];
+  } catch {
+    return [];
+  }
 };
 
 const saveChats = (chats) =>
   localStorage.setItem(LS_KEY, JSON.stringify(chats));
 
 const newChat = () => ({
-  id:        genId(),
-  title:     "New chat",
-  messages:  [],
+  id: genId(),
+  title: "New chat",
+  messages: [],
   createdAt: Date.now(),
   updatedAt: Date.now(),
 });
@@ -483,5 +488,5 @@ function App() {
     </div>
   );
 }
-      
+
 export default App;
