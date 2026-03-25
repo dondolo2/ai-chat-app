@@ -39,6 +39,14 @@ const loadChats = () => {
 const saveChats = (chats) =>
   localStorage.setItem(LS_KEY, JSON.stringify(chats));
 
+const newChat = () => ({
+  id:        genId(),
+  title:     "New chat",
+  messages:  [],
+  createdAt: Date.now(),
+  updatedAt: Date.now(),
+});
+
 function App() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
