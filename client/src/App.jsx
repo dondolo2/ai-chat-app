@@ -193,9 +193,12 @@ function App() {
       })
     );
 
-
     try {
-      const res = await axios.post("http://localhost:8000/ask", { question: userQuestion });
+      const res = await axios.post("http://localhost:8000/ask", {
+        question: userQuestion,
+        history,
+      });
+
       if (res.data._status) {
         streamText(res.data.finalData);
       } else {
@@ -203,7 +206,6 @@ function App() {
         setLoadingStatus(false);
       }
     } catch (err) {
-      console.error("Request failed:", err);
       if (err.response) {
         setError(err.response.data.message || `Server error: ${err.response.status}`);
       } else if (err.request) {
@@ -216,11 +218,9 @@ function App() {
   };
 
   const handleKeyDown = (e) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSubmit(e);
-    }
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleSubmit(e); }
   };
+
 
   return (
     <div className="app-shell">
