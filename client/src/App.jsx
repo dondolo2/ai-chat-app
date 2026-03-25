@@ -164,6 +164,14 @@ function App() {
       chatId = c.id;
     }
 
+    // snapshot history before appending new turn
+    const currentChat = chats.find((c) => c.id === chatId);
+    const history = (currentChat?.messages || [])
+      .filter((m) => m.text)
+      .map((m) => ({ role: m.role, content: m.text }));
+
+
+
     try {
       const res = await axios.post("http://localhost:8000/ask", { question: userQuestion });
       if (res.data._status) {
