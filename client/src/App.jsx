@@ -170,6 +170,10 @@ function App() {
       .filter((m) => m.text)
       .map((m) => ({ role: m.role, content: m.text }));
 
+    // auto-title from first user message
+    const isFirstMessage = history.length === 0;
+
+
 
 
     try {
