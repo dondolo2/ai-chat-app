@@ -4,6 +4,21 @@ import axios from "axios";
 import ReactMarkdown from "react-markdown";
 import Loading from "./Loading";
 
+// ─── helpers ────────────────────────────────────────────────────────────────
+
+const genId = () => crypto.randomUUID();
+
+const todayLabel = (date) => {
+  const d   = new Date(date);
+  const now = new Date();
+  const diff = (now - d) / 86400000;
+  if (diff < 1 && now.getDate() === d.getDate()) return "Today";
+  if (diff < 2 && now.getDate() - d.getDate() === 1) return "Yesterday";
+  if (diff < 7) return "This Week";
+  if (diff < 30) return "This Month";
+  return d.toLocaleString("default", { month: "long", year: "numeric" });
+};
+
 function App() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
@@ -147,7 +162,7 @@ function App() {
               value={question}
               onChange={(e) => setQuestion(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder="Message Pula AI…"
+              placeholder="Message Fast-nyana AI…"
               disabled={loadingStatus}
               rows={1}
               className="input-textarea"
