@@ -173,7 +173,25 @@ function App() {
     // auto-title from first user message
     const isFirstMessage = history.length === 0;
 
-
+    // append user + empty assistant placeholder
+    setChats((prev) =>
+      prev.map((chat) => {
+        if (chat.id !== chatId) return chat;
+        const updated = [
+          ...chat.messages,
+          { role: "user",      text: userQuestion },
+          { role: "assistant", text: "" },
+        ];
+        return {
+          ...chat,
+          messages:  updated,
+          title:     isFirstMessage
+                       ? userQuestion.slice(0, 42) + (userQuestion.length > 42 ? "…" : "")
+                       : chat.title,
+          updatedAt: Date.now(),
+        };
+      })
+    );
 
 
     try {
