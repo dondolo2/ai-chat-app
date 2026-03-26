@@ -40,8 +40,6 @@
 
 ## 📸 Screenshots
 
-> **Add your own screenshots here.** Take them from a running instance and drop the image files into a `screenshots/` folder at the root of the repo. Then the links below will resolve automatically on GitHub.
-
 **The main chat interface with sidebar open**
 ```
 screenshots/01-chat-with-sidebar.png
