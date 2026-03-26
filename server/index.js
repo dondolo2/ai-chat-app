@@ -18,7 +18,7 @@ App.get("/health", (req, res) => {
 })
 
 // InferenceClient is the current, non-deprecated API (replaces HfInference)
-app.post("/ask", async (req, res) => {
+App.post("/ask", async (req, res) => {
   const { question, history = [] } = req.body
 
   if (!question?.trim()) {
@@ -71,7 +71,7 @@ app.post("/ask", async (req, res) => {
     if      (status === 401 || msg.includes("401"))                            userMessage = "Token rejected (401) — check HF_TOKEN in server/.env"
     else if (status === 403 || msg.includes("403"))                            userMessage = "Access denied (403) — enable 'Make calls to Inference API' on your HF token"
     else if (status === 429 || msg.includes("429"))                            userMessage = "Rate limited — wait 60 s and try again"
-    else if (status === 503 || msg.includes("503") || msg.includes("loading")) userMessage = "Model warming up — wait 20–30 s and try again"
+    else if (status === 503 || msg.includes("503") || msg.includes("loading")) userMessage = "Model warming up — wait 20-30 s and try again"
     else if (msg.includes("provider") || msg.includes("inference"))            userMessage = "Inference API blocked — enable serverless inference on your HF token"
     else                                                                       userMessage = "Error: " + (msg || "check server terminal")
 
