@@ -136,7 +136,7 @@ Open `server/.env` and fill it in:
 
 ```env
 PORT=8000
-HF_TOKEN=hf_your_token_here
+HF_TOKEN=REPLACE_WITH_TOKEN
 MODEL_NAME=meta-llama/Meta-Llama-3-8B-Instruct
 ```
 
