@@ -60,9 +60,9 @@ screenshots/02-sidebar-collapsed.png
 ```
 screenshots/03-sidebar-groups.png
 ```
-<div align="center">
+<p align="center">
 ![Sidebar date groups](screenshots/03-sidebar-groups.png)
-</div>
+</p>
 
 ---
 
@@ -70,9 +70,9 @@ screenshots/03-sidebar-groups.png
 ```
 screenshots/04-rename-chat.png
 ```
-<div align="center">
+<p align="center">
 ![Rename chat](screenshots/04-rename-chat.png)
-</div>
+</p>
 
 ---
 
